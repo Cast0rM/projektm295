@@ -52,7 +52,7 @@ app.post('/tasks', checkCookie, (req, res) => {
     const task = req.body
     task.id = tasks.length + 1
     task.done = false
-    if (!isValid(task)) return res.sendStatus(422)
+    if (!isValid(task)) return res.status(422).json({ error: "Task isn't a valid Task" })
     tasks.push(task)
     res.status(201).json(task)
 })
@@ -61,7 +61,7 @@ app.get('/task/:id', checkCookie, (req, res) => {
 
     const task = tasks.find(task => task.id == req.params.id)
 
-    if (!task) return res.sendStatus(404)
+    if (!task) return res.status(404).json({ error: `task with this id: ${id} doesen't exist` })
     res.status(200).json(task)
 })
 
@@ -69,11 +69,13 @@ app.put("/task/:id", checkCookie, (req, res) => {
     const id = req.params.id
     const taskIndex = tasks.findIndex(task => task.id == id)
     const taskUpdate = req.body
+    taskUpdate.id = id
 
     if (taskIndex < 0) {
-        return res.sendStatus(404)
+        return res.status(404).json({ error: "This ID doesen't exist" })
     }
-    if (isValid(!taskUpdate)) return res.sendStatus()
+    if (isValid(!taskUpdate)) return res.status(422).json({ error: "Task is invalid" })
+
     tasks.splice(taskIndex, 1, taskUpdate)
     res.status(200).json(taskUpdate)
 })
@@ -83,7 +85,7 @@ app.delete('/task/:id', checkCookie, (req, res) => {
     const taskIndex = tasks.findIndex(task => task.id == id)
     const removedTask = tasks[taskIndex]
     if (taskIndex < 0) {
-        return res.sendStatus(404)
+        return res.status(404).json({ error: "This ID doesen't exist" })
     }
 
     tasks.splice(taskIndex, 1)
@@ -102,7 +104,7 @@ app.post('/login', (req, res) => {
 
         return res.status(201).json(result)
     }
-    return res.sendStatus(401)
+    return res.status(401).json({ error: "Login is invalid" })
 })
 
 app.get('/verify', (req, res) => {
@@ -111,7 +113,7 @@ app.get('/verify', (req, res) => {
         res.json(req.session.name)
     }
     else {
-        res.sendStatus(401)
+        res.status(401).json({ error: "Cookie unavailable" })
     }
 })
 
@@ -122,7 +124,7 @@ app.delete('/logout', (req, res) => {
         res.sendStatus(204)
     }
     else {
-        res.sendStatus(401)
+        res.status(401).json({ error: "Cookie not found" })
     }
 })
 
@@ -141,10 +143,7 @@ function checkCookie(req, res, next) {
         next()
     }
     else {
-        const message = {
-            error: "User is not allowed to see this page"
-        }
-        res.status(403).json(message)
+        res.status(403).json({ error: "User is not allowed to access to this page." })
     }
 }
 app.listen(port, () => {
