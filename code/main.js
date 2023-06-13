@@ -2,7 +2,6 @@ const express = require("express")
 const session = require("express-session")
 const bodyParser = require("body-parser")
 const cookieParser = require("cookie-parser")
-const e = require("express")
 
 const app = express()
 const port = 3000
@@ -19,7 +18,7 @@ app.use(session({
 }))
 
 const credentials = { email: null, password: "m295" }
-let newEmail = ""
+let newEmail = "castore"
 
 let tasks = [
     {
@@ -46,11 +45,14 @@ let tasks = [
 ]
 
 app.get('/tasks', checkCookie, (req, res) => {
-    res.json(200, tasks)
+    res.status(200).json(tasks)
 })
 
 app.post('/tasks', checkCookie, (req, res) => {
     const task = req.body
+    task.id = tasks.length + 1
+    task.done = false
+    if (!isValid(task)) return res.sendStatus(422)
     tasks.push(task)
     res.status(201).json(task)
 })
@@ -71,7 +73,7 @@ app.put("/task/:id", checkCookie, (req, res) => {
     if (taskIndex < 0) {
         return res.sendStatus(404)
     }
-
+    if (isValid(!taskUpdate)) return res.sendStatus()
     tasks.splice(taskIndex, 1, taskUpdate)
     res.status(200).json(taskUpdate)
 })
@@ -98,7 +100,7 @@ app.post('/login', (req, res) => {
         const result = { email: emailLogin }
         newEmail = result.email
 
-        return res.json(201, result)
+        return res.status(201).json(result)
     }
     return res.sendStatus(401)
 })
@@ -129,8 +131,10 @@ function validateEmail(email) {
     return emailRegex.test(email);
 }
 
-
-
+function isValid(task) {
+    return task.id != undefined && task.titel != undefined && task.titel.trim() !== "" &&
+        task.beschreibung != undefined && task.done != undefined && task.due != undefined
+}
 
 function checkCookie(req, res, next) {
     if (req.session.name == newEmail) {
@@ -140,7 +144,7 @@ function checkCookie(req, res, next) {
         const message = {
             error: "User is not allowed to see this page"
         }
-        res.json(403, message)
+        res.status(403).json(message)
     }
 }
 app.listen(port, () => {
